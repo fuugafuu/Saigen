@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
+  <meta name="theme-color" content="#000000" />
+  <meta name="color-scheme" content="dark" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="SOUL DUEL - two-player deterministic bullet-hell battle." />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <title>SOUL DUEL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DotGothic16&family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <div class="scanlines" id="scanlines" aria-hidden="true"></div>
+  <div class="app" id="app">
+    <section class="screen title-screen active" id="titleScreen" aria-label="Title screen">
+      <div class="title-grid" aria-hidden="true"></div>
+      <div class="logo-wrap">
+        <div class="eyebrow" data-i18n="subtitle">TWO SOULS. ONE RHYTHM.</div>
+        <h1 class="logo"><span>SOUL</span><b>♥</b><span>DUEL</span></h1>
+        <p class="tagline" data-i18n="tagline">読む。避ける。リズムを崩す。</p>
+      </div>
+
+      <div class="title-menu" role="menu">
+        <button class="menu-btn selected" data-action="local">
+          <span class="menu-heart">♥</span>
+          <span><strong data-i18n="localVersus">ローカル対戦</strong><small data-i18n="localVersusSub">同じ端末で2人対戦</small></span>
+        </button>
+        <button class="menu-btn" data-action="training">
+          <span class="menu-dot">◆</span>
+          <span><strong data-i18n="training">トレーニング</strong><small data-i18n="trainingSub">弾幕回避を練習</small></span>
+        </button>
+        <button class="menu-btn" data-action="settings">
+          <span class="menu-dot">⚙</span>
+          <span><strong data-i18n="settings">設定</strong><small data-i18n="settingsSub">言語・演出・音量</small></span>
+        </button>
+      </div>
+
+      <div class="title-status">
+        <span><i class="status-led"></i><span data-i18n="stableCore">固定60Hz / 安定化コア</span></span>
+        <span data-i18n="keyboardHint">PC: WASD / 矢印キー　スマホ: 画面操作</span>
+      </div>
+    </section>
+
+    <section class="screen battle-screen" id="battleScreen" aria-label="Battle screen">
+      <div class="battle-shell">
+        <header class="hud-top">
+          <article class="player-card p1-card" data-player="1">
+            <div class="player-head"><span class="soul-mini red">♥</span><strong>P1</strong><em class="state-chip" data-i18n="ready">READY</em></div>
+            <div class="player-name">CRIMSON</div>
+            <div class="meter-row"><span>HP</span><div class="meter-track hp"><i id="p1HpGhost"></i><b id="p1HpFill"></b></div><output id="p1HpText">92/92</output></div>
+            <div class="meter-row"><span>RS</span><div class="meter-track"><b class="resolve" id="p1ResolveFill"></b></div><output id="p1ResolveText">0%</output></div>
+            <div class="meter-row"><span>MY</span><div class="meter-track"><b class="mercy" id="p1MercyFill"></b></div><output id="p1MercyText">0%</output></div>
+          </article>
+
+          <div class="round-card">
+            <small id="roundLabel">ROUND 1</small>
+            <strong id="turnLabel">P1 TURN</strong>
+            <span><i class="status-led"></i><span data-i18n="deterministic">DETERMINISTIC</span></span>
+          </div>
+
+          <article class="player-card p2-card" data-player="2">
+            <div class="player-head"><span class="soul-mini cyan">♥</span><strong>P2</strong><em class="state-chip" data-i18n="ready">READY</em></div>
+            <div class="player-name">AZURE</div>
+            <div class="meter-row"><span>HP</span><div class="meter-track hp"><i id="p2HpGhost"></i><b id="p2HpFill"></b></div><output id="p2HpText">92/92</output></div>
+            <div class="meter-row"><span>RS</span><div class="meter-track"><b class="resolve" id="p2ResolveFill"></b></div><output id="p2ResolveText">0%</output></div>
+            <div class="meter-row"><span>MY</span><div class="meter-track"><b class="mercy" id="p2MercyFill"></b></div><output id="p2MercyText">0%</output></div>
+          </article>
+        </header>
+
+        <section class="stage-card" id="stageCard">
+          <canvas id="gameCanvas" width="960" height="540" aria-label="Battle canvas"></canvas>
+          <div class="impact-flash" id="impactFlash" aria-hidden="true"></div>
+          <div class="banner" id="roundBanner" aria-hidden="true"><span></span></div>
+          <div class="rotate-tip" id="rotateTip" aria-live="polite"><span>↻</span><b data-i18n="rotateTip">横向きにすると遊びやすくなります</b></div>
+          <div class="pause-layer" id="pauseLayer" aria-hidden="true">
+            <div class="pause-card">
+              <div class="pause-title" data-i18n="paused">PAUSED</div>
+              <p data-i18n="pauseHint">再開するには「再開」を押してください</p>
+              <button id="resumeBtn" data-i18n="resume">再開</button>
+              <button id="quitBtn" class="danger" data-i18n="quit">タイトルへ戻る</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="dialogue-card">
+          <span class="star">*</span>
+          <div class="dialogue" id="dialogueText" aria-live="polite"></div>
+          <span class="phase" id="phaseHint"></span>
+        </section>
+
+        <nav class="command-bar" id="commandBar" aria-label="Battle commands">
+          <button class="command fight selected" data-command="fight"><span class="cmd-icon">⚔</span><span data-i18n="fight">FIGHT</span></button>
+          <button class="command act" data-command="act"><span class="cmd-icon">◉</span><span data-i18n="act">ACT</span></button>
+          <button class="command item" data-command="item"><span class="cmd-icon">◆</span><span data-i18n="item">ITEM</span></button>
+          <button class="command mercy" data-command="mercy"><span class="cmd-icon">✦</span><span data-i18n="mercy">MERCY</span></button>
+        </nav>
+
+        <section class="touch-zone" id="touchZone" aria-label="Mobile controls">
+          <div class="touch-side defender-side">
+            <div class="touch-label" id="defenderTouchLabel">P2 DEFEND</div>
+            <div class="stick" id="moveStick" aria-label="Move joystick">
+              <div class="stick-ring"></div>
+              <div class="stick-knob" id="stickKnob"></div>
+            </div>
+          </div>
+          <div class="touch-center">
+            <button class="touch-confirm" id="touchConfirm"><span>●</span><b data-i18n="confirm">決定</b></button>
+          </div>
+          <div class="touch-side attacker-side">
+            <div class="touch-label" id="attackerTouchLabel">P1 ATTACK</div>
+            <div class="mod-buttons">
+              <button id="touchModL" aria-label="Pattern left">◀</button>
+              <button id="touchModR" aria-label="Pattern right">▶</button>
+            </div>
+          </div>
+        </section>
+
+        <footer class="battle-footer">
+          <span id="desktopLegend">P1: WASD / F / Q E　　P2: ↑←↓→ / ENTER / , .</span>
+          <button id="pauseBtn" data-i18n="pause">一時停止</button>
+        </footer>
+      </div>
+    </section>
+
+    <div class="modal" id="settingsModal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+        <header><h2 id="settingsTitle" data-i18n="settings">設定</h2><button class="close-x" id="closeSettings" aria-label="Close">×</button></header>
+        <label class="setting-row"><span data-i18n="language">言語</span><select id="languageSelect"><option value="ja">日本語</option><option value="en">English</option></select></label>
+        <label class="setting-row"><span data-i18n="screenShake">画面シェイク</span><input id="shakeToggle" type="checkbox" checked /></label>
+        <label class="setting-row"><span data-i18n="scanlines">スキャンライン</span><input id="scanlineToggle" type="checkbox" checked /></label>
+        <label class="setting-row"><span data-i18n="reducedMotion">アニメーションを減らす</span><input id="motionToggle" type="checkbox" /></label>
+        <label class="setting-row"><span data-i18n="soundVolume">効果音</span><input id="volumeRange" type="range" min="0" max="100" value="65" /></label>
+        <label class="setting-row"><span data-i18n="touchSize">タッチ操作サイズ</span><input id="touchSizeRange" type="range" min="80" max="130" value="100" /></label>
+        <p class="setting-note" data-i18n="stabilityNote">ゲーム判定は固定60Hz。演出が遅れても勝敗判定はズレません。</p>
+      </div>
+    </div>
+  </div>
+  <script src="./game.js"></script>
+</body>
+</html>
